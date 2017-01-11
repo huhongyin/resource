@@ -280,7 +280,8 @@ module.exports = {
             }else{
                 links.forEach(function(link, index){
                     setTimeout(function(linkItem){
-                        
+                    var url = getServerName(linkItem.href);
+                        console.log(url);
                     }, (index + 1) * 5000, link);
                 });
             }
@@ -290,3 +291,12 @@ module.exports = {
 
 };
 
+//通过正则获取当前访问链接的前缀
+function getServerName(u)
+{
+    var host = u.match(/(\S+)\?/);
+    if(host != null) {
+        return host[1];
+    }
+    return u;
+}
