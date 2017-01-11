@@ -34,7 +34,21 @@ module.exports.routes = {
 
   '/': {
     view: 'homepage'
-  }
+  },
+
+
+
+  //抓取页面链接
+  'get /saveHref': 'HrefController.saveHref',
+
+  //抓取分类链接
+  'get /saveFilterTags/:_boss': 'HrefController.saveFilterTags',
+
+  //抓取类型
+  'get /saveTags/:_boss': 'HrefController.saveTags',
+
+  //抓取影视列表
+  'get /getSourceList/:_boss': 'HrefController.getSourceList',
 
   /***************************************************************************
   *                                                                          *
