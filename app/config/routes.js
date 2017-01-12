@@ -48,7 +48,10 @@ module.exports.routes = {
   'get /saveTags/:_boss': 'HrefController.saveTags',
 
   //抓取影视列表
-  'get /getSourceList/:_boss': 'HrefController.getSourceList',
+  'get /getSourceList/:type': 'HrefController.getSourceList',
+
+  //抓影视详情
+  'get /saveVideoDetails/:videoId': 'HrefController.saveVideoDetails',
 
   /***************************************************************************
   *                                                                          *
