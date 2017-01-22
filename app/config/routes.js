@@ -37,7 +37,7 @@ module.exports.routes = {
   },
 
 
-
+  //第一版抓腾讯
   //抓取页面链接
   'get /saveHref': 'HrefController.saveHref',
 
@@ -52,6 +52,23 @@ module.exports.routes = {
 
   //抓影视详情
   'get /saveVideoDetails/:videoId': 'HrefController.saveVideoDetails',
+
+
+  //第二版抓腾讯
+  //抓取页面链接
+  'get /saveHref2': 'HrefsController.saveHref',
+
+  //抓取分类链接
+  'get /saveFilterTags2/:_boss': 'HrefsController.saveFilterTags',
+
+  //抓取类型
+  'get /saveTags2/:_boss': 'HrefsController.saveTags',
+
+  //抓取影视列表
+  'get /getSourceList2/:type': 'HrefsController.getSourceList',
+
+  //抓影视详情
+  'get /saveVideoDetails2/:videoId': 'HrefsController.saveVideoDetails',
 
   /***************************************************************************
   *                                                                          *

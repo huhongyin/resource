@@ -12,7 +12,11 @@ module.exports = {
   attributes: {
     _boss  : {
       type  : 'string',
-      required  : true
+      required  : false
+    },
+    _stat  : {
+      type  : 'string',
+      required  : false
     },
     href : {
       type  : 'string',

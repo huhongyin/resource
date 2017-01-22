@@ -19,7 +19,7 @@ module.exports = {
       required  : true
     },
     data_index : {
-      type  : 'int',
+      type  : 'string',
       required  : true
     },
     data_type : {

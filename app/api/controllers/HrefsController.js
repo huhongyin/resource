@@ -1,5 +1,5 @@
 /**
- * HrefController
+ * HrefsController
  *
  * @description :: Server-side logic for managing hrefs
  * @help        :: See http://sailsjs.org/#!/documentation/concepts/Controllers
@@ -15,7 +15,7 @@ module.exports = {
             //   hostname: '218.64.147.10',
             //   port: '9000'
             // },
-            url: 'http://www.baidu.com',
+            url: 'http://v.qq.com/x/movielist/?cate=-1&offset=0&sort=4',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
             }
@@ -42,7 +42,7 @@ module.exports = {
             //   hostname: '106.81.113.190',
             //   port: '8998'
             // },
-            url: 'http://v.qq.com/x/movielist/?cate=-1&offset=0&sort=4',
+            url: 'http://v.qq.com/x/list/movie?cate=-1&offset=0&sort=4',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
             }
@@ -52,24 +52,12 @@ module.exports = {
                 console.log(err);
             }
             var $ = cheerio.load(result.body);
-            $('.side_navi .item a').each(function(index, element){
+            $('.mod_filter .filter_list a').each(function(index, element){
                 var item = [];
-                var _boss = $(element).attr('_boss');
-                //if(_boss == 'movie' || _boss == 'tv' || _boss =='cartoon' || _boss == 'doco') {
-                var href = '';
-                if (_boss == 'tv') {
-                    href = 'http://v.qq.com/x/teleplaylist/?sort=4&offset=0';
-                } else if (_boss == 'cartoon') {
-                    href = 'http://v.qq.com/x/cartoonlist/';
-                } else if (_boss == 'doco') {
-                    href = 'http://v.qq.com/x/documentarylist/';
-                } else {
-                    href = $(element).attr('href');
-                }
+                var href = $(element).attr('href');
+                //获取链接类型
+                var _boss = getHrefType(href);
                 var show = $(element).text();
-                //}else{
-                //    _boss = '';
-                //}
                 item.push({ 'type' : _boss, 'url' : href, 'description' : show });
                 //判断是否存在该数据
                 Href.find({ 'url' : href}).exec(function (err, data){
@@ -139,11 +127,11 @@ module.exports = {
                             var $ = cheerio.load(result.body);
                             $('.filter_tabs .item a').each(function (key, element) {
                                 //电影类型a标签
-                                var _boss = $(element).attr('_boss');
+                                var _stat = $(element).attr('_stat');
                                 var href = $(element).attr('href');
                                 var show = $(element).text();
                                 var item = {
-                                    '_boss': _boss,
+                                    '_stat': _stat,
                                     'href': href,
                                     'description': show,
                                     '_parentBoss': aItem.type
@@ -190,7 +178,7 @@ module.exports = {
             //默认抓全部
             where = { 'url': { '!' : ''} };
         }else if(_parentBoss != '' && typeof(_parentBoss) != 'undefined' && _parentBoss != null){
-            //抓取指定网页的标签
+            //抓取指定网页的标签(filter:channel_电影)
             where = { 'type' : _parentBoss};
         }
         Href.find(where).exec(function (err, link){
@@ -214,38 +202,48 @@ module.exports = {
                         } else {
                             //将页面数据转换为jquery对象
                             var $ = cheerio.load(result.body);
-                            $('.mod_filter_list .item .tags_list a').each(function(index, element){
+                            $('.mod_filter_wrap .filter_box_inner .filter_content a').each(function(index, element){
                                 //电影类型a标签
                                 //获取_boss
-                                var _boss = $(element).attr('_boss');
                                 var href = $(element).attr('href');
-                                var data_index = $(element).attr('data-index');
-                                var data_type = $(element).attr('data-type');
+                                var arr = getTypeArr(href);
+                                var _boss = arr['_boss'];
+                                var data_index = arr['data_index'];
+                                var data_type = arr['data_type'];
                                 var show = $(element).text();
-                                var item = { _boss : _boss, href : href, data_index : data_index, data_type : data_type, show : show, _parentBoss : aItem.type };
-                                //保存到tabs Collection
-                                Tags.find({
-                                    'href': href,
-                                    '_parentBoss': aItem.type,
-                                    'data_index': data_index,
-                                    'data_type': data_type,
-                                    '_boss': _boss
-                                }).exec(function (err, tags) {
-                                    if (tags.length != 0) {
-                                        console.log('已经存在相同的分类：' + href);
-                                        return err;
-                                    }else if(tags.length == 0) {
-                                        Tags.create(item).exec(function (err, created) {
-                                            if (err) {
-                                                console.log(err);
-                                                return err;
-                                            } else {
-                                                console.log('添加分类成功：' + created);
-                                                return created;
-                                            }
-                                        });
-                                    }
-                                });
+                                if(_boss != 'q') {
+                                    var item = {
+                                        _boss: _boss,
+                                        href: href,
+                                        data_index: data_index,
+                                        data_type: data_type,
+                                        show: show,
+                                        _parentBoss: aItem.type
+                                    };
+                                    //保存到tabs Collection
+                                    Tags.find({
+                                        'href': href,
+                                        '_parentBoss': aItem.type,
+                                        'data_index': data_index,
+                                        'data_type': data_type,
+                                        '_boss': _boss
+                                    }).exec(function (err, tags) {
+                                        if (tags.length != 0) {
+                                            console.log('已经存在相同的分类：' + href);
+                                            return err;
+                                        } else if (tags.length == 0) {
+                                            Tags.create(item).exec(function (err, created) {
+                                                if (err) {
+                                                    console.log(err);
+                                                    return err;
+                                                } else {
+                                                    console.log('添加分类成功：' + created);
+                                                    return created;
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
                             });
                         }
                     });
@@ -343,66 +341,70 @@ module.exports = {
                                                                                                     }else{
                                                                                                         var $ = cheerio.load(result.body);
                                                                                                         //获取数据总条数
-
-                                                                                                        var max = $('.filter_option .txt_01 .strong').text();
+                                                                                                        var max = 0;
+                                                                                                        $('.filter_option .option_txt .hl').each(function(i, ui){
+                                                                                                            if(i == 0){
+                                                                                                                max = $(ui).text();
+                                                                                                            }
+                                                                                                        });
                                                                                                         if(max == ''){
                                                                                                             max = 0;
                                                                                                         }
-
-                                                                                                        for(var offsetKey = 0; offsetKey < max; offsetKey = offsetKey + 30){
-
-                                                                                                            setTimeout(function(offset){
-
-                                                                                                                u = checkParam(u, 'offset', offset);
-
-                                                                                                                var options = {
-                                                                                                                    // proxy: {
-                                                                                                                    //   hostname: '106.81.113.190',
-                                                                                                                    //   port: '8998'
-                                                                                                                    // },
-                                                                                                                    url: u,
-                                                                                                                    headers: {
-                                                                                                                        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
-                                                                                                                    }
-                                                                                                                };
-
-                                                                                                                request(options, function(err, result){
-                                                                                                                        if(err){
-                                                                                                                            console.log('抓数据页面出错' + err);
-                                                                                                                            return err;
-                                                                                                                        }else{
-                                                                                                                            var $ = cheerio.load(result.body);
-
-                                                                                                                            var videoInfo = getVideoInfo($);
-
-                                                                                                                            for(var index = 0; index < videoInfo.length; index ++){
-
-                                                                                                                                setTimeout(function(video){
-
-                                                                                                                                    Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
-                                                                                                                                        if(resVideo.length == 0){
-                                                                                                                                            Video.create(video).exec(function(er, re){
-                                                                                                                                                if(er){
-                                                                                                                                                    console.log('插入失败' + err);
-                                                                                                                                                }else{
-                                                                                                                                                    console.log('添加影视成功' + video.video_id);
-                                                                                                                                                }
-                                                                                                                                            });
-                                                                                                                                        }else{
-                                                                                                                                            console.log('已经存在相同的影视了:' + video.video_name);
-                                                                                                                                        }
-                                                                                                                                    });
-
-                                                                                                                                }, 1000, videoInfo[index]);
-
-                                                                                                                            }
-
-                                                                                                                        }
-                                                                                                                });
-
-                                                                                                            }, 1000, offsetKey);
-
-                                                                                                        }
+console.log(max);
+                                                                                                        //for(var offsetKey = 0; offsetKey < max; offsetKey = offsetKey + 30){
+                                                                                                        //
+                                                                                                        //    setTimeout(function(offset){
+                                                                                                        //
+                                                                                                        //        u = checkParam(u, 'offset', offset);
+                                                                                                        //
+                                                                                                        //        var options = {
+                                                                                                        //            // proxy: {
+                                                                                                        //            //   hostname: '106.81.113.190',
+                                                                                                        //            //   port: '8998'
+                                                                                                        //            // },
+                                                                                                        //            url: u,
+                                                                                                        //            headers: {
+                                                                                                        //                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+                                                                                                        //            }
+                                                                                                        //        };
+                                                                                                        //
+                                                                                                        //        request(options, function(err, result){
+                                                                                                        //                if(err){
+                                                                                                        //                    console.log('抓数据页面出错' + err);
+                                                                                                        //                    return err;
+                                                                                                        //                }else{
+                                                                                                        //                    var $ = cheerio.load(result.body);
+                                                                                                        //
+                                                                                                        //                    var videoInfo = getVideoInfo($);
+                                                                                                        //
+                                                                                                        //                    for(var index = 0; index < videoInfo.length; index ++){
+                                                                                                        //
+                                                                                                        //                        setTimeout(function(video){
+                                                                                                        //
+                                                                                                        //                            Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
+                                                                                                        //                                if(resVideo.length == 0){
+                                                                                                        //                                    Video.create(video).exec(function(er, re){
+                                                                                                        //                                        if(er){
+                                                                                                        //                                            console.log('插入失败' + err);
+                                                                                                        //                                        }else{
+                                                                                                        //                                            console.log('添加影视成功' + video.video_id);
+                                                                                                        //                                        }
+                                                                                                        //                                    });
+                                                                                                        //                                }else{
+                                                                                                        //                                    console.log('已经存在相同的影视了:' + video.video_name);
+                                                                                                        //                                }
+                                                                                                        //                            });
+                                                                                                        //
+                                                                                                        //                        }, 1000, videoInfo[index]);
+                                                                                                        //
+                                                                                                        //                    }
+                                                                                                        //
+                                                                                                        //                }
+                                                                                                        //        });
+                                                                                                        //
+                                                                                                        //    }, 1000, offsetKey);
+                                                                                                        //
+                                                                                                        //}
 
                                                                                                     }
                                                                                                 });
@@ -640,6 +642,7 @@ function checkParam(param, paramName, paramValue)
     return param;
 }
 
+
 //将电影的地区、年份、类型数组分组
 function sortArr(arr)
 {
@@ -674,5 +677,30 @@ function getVideoInfo($)
     return arr;
 }
 
+//获取链接类型
+function getHrefType(href)
+{
+    var p1 = /http:\/\/v.qq.com\/x\/list\/([\S]+)/gim;
+    var result = p1.exec(href)[1];
+    return result;
+}
+
+function getTypeArr(href)
+{
+    var p1 = /\?\S+&(\S+)/gim;
+    var result = p1.exec(href);
+    //匹配值和参数名
+    var val = result[1];
+    var p2 = /(\S+)=(\S+)/gim;
+    var re = p2.exec(val);
+    if(re == null){
+        //重新匹配全部
+        var p3 = /(\S+)=/gim;
+        var r = p3.exec(val);
+        return { '_boss' : r[1], 'data_index' : '-1', 'data_type' : r[1] };
+    }else{
+        return { '_boss' : re[1], 'data_index' : re[2], 'data_type' : re[1] };
+    }
+}
 
 

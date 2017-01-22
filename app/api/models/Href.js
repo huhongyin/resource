@@ -21,7 +21,11 @@ module.exports = {
       description : {
         type  : 'string',
         required  : false
-      }
+      },
+      _stat : {
+        type  : 'string',
+        required  : false
+      },
     },
   autoCreatedAt: true,
 

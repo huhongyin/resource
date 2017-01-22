@@ -64,6 +64,14 @@ module.exports.connections = {
      password: 'huhongyin19940324', //optional
      database: 'resource' //optional
    },
+  videoTwoMongodbServer: {
+    adapter: 'sails-mongo',
+    host: '192.168.33.20',
+    port: 27017,
+    user: 'admin', //optional
+    password: 'huhongyin19940324', //optional
+    database: 'resourceTow' //optional
+  },
 
   /***************************************************************************
   *                                                                          *
