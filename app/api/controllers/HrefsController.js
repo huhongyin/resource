@@ -350,61 +350,60 @@ module.exports = {
                                                                                                         if(max == ''){
                                                                                                             max = 0;
                                                                                                         }
-console.log(max);
-                                                                                                        //for(var offsetKey = 0; offsetKey < max; offsetKey = offsetKey + 30){
-                                                                                                        //
-                                                                                                        //    setTimeout(function(offset){
-                                                                                                        //
-                                                                                                        //        u = checkParam(u, 'offset', offset);
-                                                                                                        //
-                                                                                                        //        var options = {
-                                                                                                        //            // proxy: {
-                                                                                                        //            //   hostname: '106.81.113.190',
-                                                                                                        //            //   port: '8998'
-                                                                                                        //            // },
-                                                                                                        //            url: u,
-                                                                                                        //            headers: {
-                                                                                                        //                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
-                                                                                                        //            }
-                                                                                                        //        };
-                                                                                                        //
-                                                                                                        //        request(options, function(err, result){
-                                                                                                        //                if(err){
-                                                                                                        //                    console.log('抓数据页面出错' + err);
-                                                                                                        //                    return err;
-                                                                                                        //                }else{
-                                                                                                        //                    var $ = cheerio.load(result.body);
-                                                                                                        //
-                                                                                                        //                    var videoInfo = getVideoInfo($);
-                                                                                                        //
-                                                                                                        //                    for(var index = 0; index < videoInfo.length; index ++){
-                                                                                                        //
-                                                                                                        //                        setTimeout(function(video){
-                                                                                                        //
-                                                                                                        //                            Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
-                                                                                                        //                                if(resVideo.length == 0){
-                                                                                                        //                                    Video.create(video).exec(function(er, re){
-                                                                                                        //                                        if(er){
-                                                                                                        //                                            console.log('插入失败' + err);
-                                                                                                        //                                        }else{
-                                                                                                        //                                            console.log('添加影视成功' + video.video_id);
-                                                                                                        //                                        }
-                                                                                                        //                                    });
-                                                                                                        //                                }else{
-                                                                                                        //                                    console.log('已经存在相同的影视了:' + video.video_name);
-                                                                                                        //                                }
-                                                                                                        //                            });
-                                                                                                        //
-                                                                                                        //                        }, 1000, videoInfo[index]);
-                                                                                                        //
-                                                                                                        //                    }
-                                                                                                        //
-                                                                                                        //                }
-                                                                                                        //        });
-                                                                                                        //
-                                                                                                        //    }, 1000, offsetKey);
-                                                                                                        //
-                                                                                                        //}
+                                                                                                        for(var offsetKey = 0; offsetKey < max; offsetKey = offsetKey + 30){
+
+                                                                                                            setTimeout(function(offset){
+
+                                                                                                                u = checkParam(u, 'offset', offset);
+
+                                                                                                                var options = {
+                                                                                                                    // proxy: {
+                                                                                                                    //   hostname: '106.81.113.190',
+                                                                                                                    //   port: '8998'
+                                                                                                                    // },
+                                                                                                                    url: u,
+                                                                                                                    headers: {
+                                                                                                                        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+                                                                                                                    }
+                                                                                                                };
+
+                                                                                                                request(options, function(err, result){
+                                                                                                                        if(err){
+                                                                                                                            console.log('抓数据页面出错' + err);
+                                                                                                                            return err;
+                                                                                                                        }else{
+                                                                                                                            var $ = cheerio.load(result.body);
+
+                                                                                                                            var videoInfo = getVideoInfo($);
+
+                                                                                                                            for(var index = 0; index < videoInfo.length; index ++){
+
+                                                                                                                                setTimeout(function(video){
+
+                                                                                                                                    Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
+                                                                                                                                        if(resVideo.length == 0){
+                                                                                                                                            Video.create(video).exec(function(er, re){
+                                                                                                                                                if(er){
+                                                                                                                                                    console.log('插入失败' + err);
+                                                                                                                                                }else{
+                                                                                                                                                    console.log('添加影视成功' + video.video_id);
+                                                                                                                                                }
+                                                                                                                                            });
+                                                                                                                                        }else{
+                                                                                                                                            console.log('已经存在相同的影视了:' + video.video_name);
+                                                                                                                                        }
+                                                                                                                                    });
+
+                                                                                                                                }, 1000, videoInfo[index]);
+
+                                                                                                                            }
+
+                                                                                                                        }
+                                                                                                                });
+
+                                                                                                            }, 1000, offsetKey);
+
+                                                                                                        }
 
                                                                                                     }
                                                                                                 });
@@ -665,9 +664,14 @@ function getVideoInfo($)
 {
     var arr = [];
     $('.figures_list li').each(function(index, li){
-        var video_id = $(this).find('.figure_option').attr('data-followid');
-        var imgUrl = $(this).find('img').attr("r-lazyload");
+        //var video_id = $(this).find('.figure_option').attr('data-followid');
+        //var imgUrl = $(this).find('img').attr("r-lazyload");
+        var imgUrl = $(this).find('img').attr("src");
         var video_name = $(this).find('.figure_title a').text();
+        var href = $(this).find('.figure_title a').attr('href');
+        //https://v.qq.com/x/cover/o259zfwvhkvl3oi.html
+        var pre = /https:\/\/v.qq.com\/x\/cover\/([\S]+)/gim;
+        var video_id = pre.exec(href)[1];
         var item =  { 'video_id' : video_id, 'imgUrl' : imgUrl, 'video_name' : video_name };
         arr.push(item);
         //if(video_id != undefined && video_id != null && video_id != '') {
