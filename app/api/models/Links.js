@@ -1,5 +1,5 @@
 /**
- * Video.js
+ * Links.js
  *
  * @description :: TODO: You might write a short summary of how this model works and what it represents here.
  * @docs        :: http://sailsjs.org/documentation/concepts/models-and-orm/models
@@ -8,24 +8,16 @@
 module.exports = {
 
   connection: 'resourceMongodbServer',
-  tableName: 'video',
+  tableName: 'links',
   attributes: {
-    video_id  : {
+    type  : {
       type  : 'string',
       required  : true
     },
-    imgUrl : {
+    link : {
       type  : 'string',
       required  : true
     },
-    video_name : {
-      type  : 'string',
-      required  : false
-    },
-    type : {
-      type  : 'string',
-      required  : false
-    }
   },
   autoCreatedAt: true,
 

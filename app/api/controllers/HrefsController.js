@@ -209,6 +209,9 @@ module.exports = {
                                 var arr = getTypeArr(href);
                                 var _boss = arr['_boss'];
                                 var data_index = arr['data_index'];
+                                if(arr['data_index'] == '-1'){
+                                    href = href + '-1';
+                                }
                                 var data_type = arr['data_type'];
                                 var show = $(element).text();
                                 if(_boss != 'q') {
@@ -253,8 +256,96 @@ module.exports = {
         });
     },
 
-    //抓取影视列表(通过参数抓取(all抓取全部))
-    getSourceList:function(req, res){
+    getList: function(req, res){
+        var options = {
+            // proxy: {
+            //   hostname: '106.81.113.190',
+            //   port: '8998'
+            // },
+            url: u,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+            }
+        };
+
+        request(options, function(err, result){
+            if(err){
+                console.log(err);
+                console.log('请求出错');
+            }else{
+                var $ = cheerio.load(result.body);
+                //获取数据总条数
+                var max = 0;
+                $('.filter_option .option_txt .hl').each(function(i, ui){
+                    if(i == 0){
+                        max = $(ui).text();
+                    }
+                });
+                //console.log(u);
+                //console.log(max);
+                //if(max == ''){
+                //    max = 0;
+                //}
+                //for(var offsetKey = 0; offsetKey <= max; offsetKey = offsetKey + 30){
+                //
+                //    setTimeout(function(offset){
+                //
+                //        u = checkParam(u, 'offset', offset);
+                //
+                //        var options = {
+                //            // proxy: {
+                //            //   hostname: '106.81.113.190',
+                //            //   port: '8998'
+                //            // },
+                //            url: u,
+                //            headers: {
+                //                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+                //            }
+                //        };
+                //
+                //        request(options, function(err, result){
+                //                if(err){
+                //                    console.log('抓数据页面出错' + err);
+                //                    return err;
+                //                }else{
+                //                    var $ = cheerio.load(result.body);
+                //
+                //                    var videoInfo = getVideoInfo($);
+                //
+                //                    for(var index = 0; index < videoInfo.length; index ++){
+                //
+                //                        setTimeout(function(video){
+                //
+                //                            Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
+                //                                if(resVideo.length == 0){
+                //                                    Video.create(video).exec(function(er, re){
+                //                                        if(er){
+                //                                            console.log('插入失败' + err);
+                //                                        }else{
+                //                                            console.log('添加影视成功' + video.video_id);
+                //                                        }
+                //                                    });
+                //                                }else{
+                //                                    console.log('已经存在相同的影视了:' + video.video_name);
+                //                                }
+                //                            });
+                //
+                //                        }, 0, videoInfo[index]);
+                //
+                //                    }
+                //
+                //                }
+                //        });
+                //
+                //    }, 0, offsetKey);
+                //
+                //}
+
+            }
+        });
+    },
+
+    getSource:function(req, res){
         var cheerio = require("cheerio");
         var request = require("request");
         //引入model
@@ -262,6 +353,227 @@ module.exports = {
         var filterModel = require("../models/FilterTags");
         var tags = require("../models/Tags");
         var video = require("../models/Video");
+        //var u = 'http://v.qq.com/x/list/movie?offset=0&sort=6';
+        var u = '';
+        var type = req.param('type', '');
+        var where = {};
+        if(type != ''){
+            where = {'type' : type};
+        }
+        if(u == '' || u == null){
+            //如果抓取的链接为空,则抓全部分类下的数据
+            Href.find(where).exec(function(err, hrefs){
+                hrefs.forEach(function(url, index){
+                    var u = url['url'] + '?';
+                    if(url['type'] == 'movie' || url['type'] == 'tv'){
+                        var options = {
+                            // proxy: {
+                            //   hostname: '106.81.113.190',
+                            //   port: '8998'
+                            // },
+                            url: u,
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+                            }
+                        };
+
+                        request(options, function(err, result){
+                            if(err){
+                                console.log(err);
+                                console.log('请求出错');
+                            }else{
+                                var $ = cheerio.load(result.body);
+                                //获取数据总条数
+                                var max = 0;
+                                $('.filter_option .option_txt .hl').each(function(i, ui){
+                                    if(i == 0){
+                                        max = $(ui).text();
+                                    }
+                                });
+                                if(max == ''){
+                                    max = 0;
+                                }
+                                for(var offsetKey = 0; offsetKey <= max; offsetKey = offsetKey + 30){
+
+                                    setTimeout(function(offset){
+
+                                        u = checkParam(u, 'offset', offset);
+                                        var options = {
+                                            // proxy: {
+                                            //   hostname: '106.81.113.190',
+                                            //   port: '8998'
+                                            // },
+                                            url: u,
+                                            headers: {
+                                                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+                                            }
+                                        };
+
+                                        request(options, function(err, result){
+                                            if(err){
+                                                console.log('抓数据页面出错' + err);
+                                                return err;
+                                            }else{
+                                                var $ = cheerio.load(result.body);
+                                                var videoInfo = getVideoInfo($);
+
+                                                for(var index = 0; index < videoInfo.length; index ++){
+
+                                                    setTimeout(function(video){
+                                                        video.type = url['type'];
+                                                        Video.findOne({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
+                                                            resVideo.type = url['type'];
+                                                            if(resVideo.length == 0){
+                                                                Video.create(video).exec(function(er, re){
+                                                                    if(er){
+                                                                        console.log('插入失败' + err);
+                                                                    }else{
+                                                                        console.log('添加影视成功' + video.video_id);
+                                                                    }
+                                                                });
+                                                            }else{
+                                                                resVideo.save(
+                                                                    function(er){
+                                                                        if(err != null){
+                                                                            console.log('更新影视列表失败:' + er);
+                                                                        }else{
+                                                                            console.log('更新影视列表成功:' + video.video_id + '影视名:' + video.video_name);
+                                                                        }
+                                                                    }
+                                                                );
+                                                            }
+                                                        });
+
+                                                    }, 0, videoInfo[index]);
+
+                                                }
+
+                                            }
+                                        });
+
+                                    }, 0, offsetKey);
+
+                                }
+
+                            }
+                        });
+                    }
+
+                });
+
+            });
+        }else{
+            var options = {
+                // proxy: {
+                //   hostname: '106.81.113.190',
+                //   port: '8998'
+                // },
+                url: u,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+                }
+            };
+
+            request(options, function(err, result){
+                if(err){
+                    console.log(err);
+                    console.log('请求出错');
+                }else{
+                    var $ = cheerio.load(result.body);
+                    //获取数据总条数
+                    var max = 0;
+                    $('.filter_option .option_txt .hl').each(function(i, ui){
+                        if(i == 0){
+                            max = $(ui).text();
+                        }
+                    });
+                    if(max == ''){
+                        max = 0;
+                    }
+                    for(var offsetKey = 0; offsetKey <= max; offsetKey = offsetKey + 30){
+
+                        setTimeout(function(offset){
+
+                            u = checkParam(u, 'offset', offset);
+                            console.log(u);
+                            var options = {
+                                // proxy: {
+                                //   hostname: '106.81.113.190',
+                                //   port: '8998'
+                                // },
+                                url: u,
+                                headers: {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+                                }
+                            };
+
+                            request(options, function(err, result){
+                                if(err){
+                                    console.log('抓数据页面出错' + err);
+                                    return err;
+                                }else{
+                                    var $ = cheerio.load(result.body);
+
+                                    var videoInfo = getVideoInfo($);
+
+                                    for(var index = 0; index < videoInfo.length; index ++){
+
+                                        setTimeout(function(video){
+                                            //http://v.qq.com/x/list/movie?edition=&plot_aspect=&area=&sort=6&year=&offset=0&cate=&pay=
+                                            var pre = /http:\/\/v.qq.com\/x\/list\/([\S]+)\?/gim;
+                                            var t = pre.exec(u);
+                                            var type = t[1];
+                                            video.type = type;
+                                            Video.findOne({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
+                                                resVideo.type = type;
+                                                if(resVideo.length == 0){
+                                                    Video.create(video).exec(function(er, re){
+                                                        if(er){
+                                                            console.log('插入失败' + err);
+                                                        }else{
+                                                            console.log('添加影视成功' + video.video_id);
+                                                        }
+                                                    });
+                                                }else{
+                                                    resVideo.save(
+                                                        function(er){
+                                                            if(err != null){
+                                                                console.log('更新影视列表失败:' + er);
+                                                            }else{
+                                                                console.log('更新影视列表成功:' + video.video_id + '影视名:' + video.video_name);
+                                                            }
+                                                        }
+                                                    );
+                                                }
+                                            });
+
+                                        }, 0, videoInfo[index]);
+
+                                    }
+
+                                }
+                            });
+
+                        }, 0, offsetKey);
+
+                    }
+
+                }
+            });
+        }
+
+    },
+
+    //拼接电影列表链接(通过参数抓取(all抓取全部))
+    getSourceLink:function(req, res){
+        var cheerio = require("cheerio");
+        var request = require("request");
+        //引入model
+        var hrefModel = require("../models/Href");
+        var filterModel = require("../models/FilterTags");
+        var tags = require("../models/Tags");
+        var video = require("../models/Video");
+        var linksModel = require("../models/Links");
         //抓取数据的类型(电影、电视剧、动漫等的列表叶数据(1.数据库取出href 拼接参数然后获取条数抓取))
         var type = req.param('type', '');
         var where = {};
@@ -301,142 +613,76 @@ module.exports = {
                                         for(var subTypeKey = 0; subTypeKey < tags['subtype']. length; subTypeKey ++){
                                             setTimeout(function(subTypeItem){
                                                 u = checkParam(u, subTypeItem['data_type'], subTypeItem['data_index']);
+
                                                 for(var areaKey = 0; areaKey < tags['area']. length; areaKey ++){
                                                     setTimeout(function(areaItem){
                                                         u = checkParam(u, areaItem['data_type'], areaItem['data_index']);
+
                                                         for(var yearKey = 0; yearKey < tags['year']. length; yearKey ++){
                                                             setTimeout(function(yearItem){
                                                                 u = checkParam(u, yearItem['data_type'], yearItem['data_index']);
-                                                                for(var plot_aspectKey = 0; plot_aspectKey < tags['plot_aspect']. length; plot_aspectKey ++){
-                                                                    setTimeout(function(plot_aspectItem){
-                                                                        u = checkParam(u, plot_aspectItem['data_type'], plot_aspectItem['data_index']);
-                                                                        for(var cateKey = 0; cateKey < tags['cate']. length; cateKey ++){
-                                                                            setTimeout(function(cateItem){
-                                                                                u = checkParam(u, cateItem['data_type'], cateItem['data_index']);
-                                                                                for(var payKey = 0; payKey < tags['pay']. length; payKey ++){
-                                                                                    setTimeout(function(payItem){
-                                                                                        u = checkParam(u, payItem['data_type'], payItem['data_index']);
-                                                                                        for(var editionKey = 0; editionKey < tags['edition']. length; editionKey ++){
-                                                                                            setTimeout(function(editionItem){
+                                                                console.log(u);
+                                                                //for(var plot_aspectKey = 0; plot_aspectKey < tags['plot_aspect']. length; plot_aspectKey ++){
+                                                                //    setTimeout(function(plot_aspectItem){
+                                                                //        u = checkParam(u, plot_aspectItem['data_type'], plot_aspectItem['data_index']);
 
+                                                                        //for(var cateKey = 0; cateKey < tags['cate']. length; cateKey ++){
+                                                                        //    setTimeout(function(cateItem){
+                                                                        //        u = checkParam(u, cateItem['data_type'], cateItem['data_index']);
 
-                                                                                                u = checkParam(u, editionItem['data_type'], editionItem['data_index']);
+                                                                                //for(var payKey = 0; payKey < tags['pay']. length; payKey ++){
+                                                                                //    setTimeout(function(payItem){
+                                                                                //        u = checkParam(u, payItem['data_type'], payItem['data_index']);
+                                                                                //
+                                                                                //        for(var editionKey = 0; editionKey < tags['edition']. length; editionKey ++){
+                                                                                //            setTimeout(function(editionItem){
+                                                                                //
+                                                                                //                u = checkParam(u, editionItem['data_type'], editionItem['data_index']);
+                                                                                //
+                                                                                //                where = { 'type': link['type'], 'link' : u };
+                                                                                //                Links.find(where).exec(function(res, linksRes){
+                                                                                //                    if(linksRes.length == 0){
+                                                                                //                        Links.create(where).exec(function(err, result){
+                                                                                //                            if(err){
+                                                                                //                                console.log(err + '插入链接失败');
+                                                                                //                            }else{
+                                                                                //                                console.log(err + '添加链接成功:' + u);
+                                                                                //                            }
+                                                                                //                        });
+                                                                                //                    }else{
+                                                                                //                        console.log('已经存在该链接');
+                                                                                //                    }
+                                                                                //                });
+                                                                                //
+                                                                                //            }, 0, tags['edition'][editionKey]);
+                                                                                //        }
+                                                                                //
+                                                                                //    }, 0, tags['pay'][payKey]);
+                                                                                //}
 
+                                                                        //    }, 0, tags['cate'][cateKey]);
+                                                                        //}
 
-                                                                                                var options = {
-                                                                                                    // proxy: {
-                                                                                                    //   hostname: '106.81.113.190',
-                                                                                                    //   port: '8998'
-                                                                                                    // },
-                                                                                                    url: u,
-                                                                                                    headers: {
-                                                                                                        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
-                                                                                                    }
-                                                                                                };
+                                                                //    }, 0, tags['plot_aspect'][plot_aspectKey]);
+                                                                //}
 
-                                                                                                request(options, function(err, result){
-                                                                                                    if(err){
-                                                                                                        console.log(err);
-                                                                                                        return false;
-                                                                                                    }else{
-                                                                                                        var $ = cheerio.load(result.body);
-                                                                                                        //获取数据总条数
-                                                                                                        var max = 0;
-                                                                                                        $('.filter_option .option_txt .hl').each(function(i, ui){
-                                                                                                            if(i == 0){
-                                                                                                                max = $(ui).text();
-                                                                                                            }
-                                                                                                        });
-                                                                                                        if(max == ''){
-                                                                                                            max = 0;
-                                                                                                        }
-                                                                                                        for(var offsetKey = 0; offsetKey < max; offsetKey = offsetKey + 30){
-
-                                                                                                            setTimeout(function(offset){
-
-                                                                                                                u = checkParam(u, 'offset', offset);
-
-                                                                                                                var options = {
-                                                                                                                    // proxy: {
-                                                                                                                    //   hostname: '106.81.113.190',
-                                                                                                                    //   port: '8998'
-                                                                                                                    // },
-                                                                                                                    url: u,
-                                                                                                                    headers: {
-                                                                                                                        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
-                                                                                                                    }
-                                                                                                                };
-
-                                                                                                                request(options, function(err, result){
-                                                                                                                        if(err){
-                                                                                                                            console.log('抓数据页面出错' + err);
-                                                                                                                            return err;
-                                                                                                                        }else{
-                                                                                                                            var $ = cheerio.load(result.body);
-
-                                                                                                                            var videoInfo = getVideoInfo($);
-
-                                                                                                                            for(var index = 0; index < videoInfo.length; index ++){
-
-                                                                                                                                setTimeout(function(video){
-
-                                                                                                                                    Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
-                                                                                                                                        if(resVideo.length == 0){
-                                                                                                                                            Video.create(video).exec(function(er, re){
-                                                                                                                                                if(er){
-                                                                                                                                                    console.log('插入失败' + err);
-                                                                                                                                                }else{
-                                                                                                                                                    console.log('添加影视成功' + video.video_id);
-                                                                                                                                                }
-                                                                                                                                            });
-                                                                                                                                        }else{
-                                                                                                                                            console.log('已经存在相同的影视了:' + video.video_name);
-                                                                                                                                        }
-                                                                                                                                    });
-
-                                                                                                                                }, 1000, videoInfo[index]);
-
-                                                                                                                            }
-
-                                                                                                                        }
-                                                                                                                });
-
-                                                                                                            }, 1000, offsetKey);
-
-                                                                                                        }
-
-                                                                                                    }
-                                                                                                });
-
-                                                                                            }, 1000, tags['edition'][editionKey]);
-                                                                                        }
-
-                                                                                    }, 1000, tags['pay'][payKey]);
-                                                                                }
-
-                                                                            }, 1000, tags['cate'][cateKey]);
-                                                                        }
-
-                                                                    }, 1000, tags['plot_aspect'][plot_aspectKey]);
-                                                                }
-
-                                                            }, 1000, tags['year'][yearKey]);
+                                                            }, 0, tags['year'][yearKey]);
                                                         }
 
-                                                    }, 1000, tags['area'][areaKey]);
+                                                    }, 0, tags['area'][areaKey]);
                                                 }
 
-                                            }, 1000, tags['subtype'][subTypeKey]);
+                                            }, 0, tags['subtype'][subTypeKey]);
                                         }
 
-                                    }, 1000, filterTags[i]);
+                                    }, 0, filterTags[i]);
                                 }
                                 //首先循环标签数组
 
                             });
                         });
 
-                    }, 1000, link);
+                    }, 0, link);
                 });
             }
         });
@@ -492,7 +738,7 @@ module.exports = {
                                                 if(err){
                                                     console.log(err + '插入失败');
                                                 }else{
-                                                    console.log(err + '添加详情成功');
+                                                    console.log('添加详情成功' + details['video_cname']);
                                                 }
                                             });
                                         }else{
@@ -510,11 +756,174 @@ module.exports = {
             }
         });
 
-    }
+    },
+    //抓取演员信息
+    getStarInfo:function(req, res){
+        var cheerio = require("cheerio");
+        var request = require("request");
+
+        //引入model
+        var actorModel = require("../models/Actors");
+        var actorId = req.param('actorId', '');
+
+        var where = { 'actor_id': { '!' : ''} };
+        if(actorId != 'all'){
+             where = { 'actor_id': actorId };
+        }
+        Actors.find(where).exec(function(err, actors){
+            if(err == null){
+                actors.forEach(function(actor, index){
+                    var url = 'http://v.qq.com/x/star/' + actor['actor_id'];
+                    var options = {
+                        // proxy: {
+                        //   hostname: '106.81.113.190',
+                        //   port: '8998'
+                        // },
+                        url: url,
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
+                        }
+                    };
+
+                    request(options, function(err, result){
+                        if(err){
+                            console.log('抓取演员出错' + err);
+                            return err;
+                        }else{
+                            var $ = cheerio.load(result.body);
+
+                            var actorInfo = getActorInfo($, actor);
+                            if(actorInfo.actor_id != null){
+                                Actors.findOne({
+                                    'actor_id' : actorInfo.actor_id,
+                                    'actor_name' : actorInfo.actor_name
+                                }).exec(function(err, res){
+                                    if(err == null){
+                                        actorInfo.save(
+                                            function(er){
+                                                if(err != null){
+                                                    console.log('更新演员信息失败:' + er);
+                                                }else{
+                                                    console.log('更新演员信息成功:' + actor.id + '演员名为:' + actor.actor_id);
+                                                }
+                                            });
+                                    }else{
+                                        Actors.create(actorInfo).exec(function(err, re){
+                                            if(err == null){
+                                                console.log('创建演员信息成功:' + actorInfo.actor_id);
+                                            }else{
+                                                console.log('创建演员信息失败:' + err);
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                    });
+                });
+            }else{
+                console.log('没有找到演员信息');
+            }
+        });
+
+    },
 
 };
 
+function getActorInfo($, actor)
+{
+    //血型
+    var spanElements = $('.star_current .star_info .starIntro .star_briefIntro').find('span');
+    var blood_type = '';
+    var constellation = '';
+    var height = '';
+    var sex = '';
+    var birthday = '';
+    var actor_ename = '';
+    var nation = '';
+    var hobby = '';
+    var area = '';
+    var job = '';
+    var actor_oname = '';
+    var actor_head_pic = $('.star_current .head_portrait img').attr('src');
+    var actor_name = $('.star_current .star_info .starIntro .starIntro_top .name').text();
 
+    spanElements.each(function(index, span){
+        var blood = $(span).text().match(/型/);
+        if(blood != null) {
+            blood_type = $(span).text();
+        }
+        var constellationMatch = $(span).text().match(/座/);
+        if(constellationMatch != null){
+            constellation = $(span).text();
+        }
+        var heightMatch = $(span).text().match(/cm/);
+        if(heightMatch != null){
+            height = $(span).text();
+        }
+    });
+    //介绍
+    var description = $('.star_current .star_info .starIntro .star_des_marginB').text();
+    var lis = $('.star_current .star_info .starIntro .starInfo_list li');
+    lis.each(function(index, li){
+        var left = $(li).find('.listLeft').text();
+
+        var jobMatch = $(li).find('.listLeft').text().match(/职业/);
+        if(jobMatch != null){
+            var jobs = $(li).find('.listRight i');
+            jobs.each(function(index, i){
+                job += $(i).text() + ',';
+            });
+        }
+
+        var actorOname = $(li).find('.listLeft').text().match(/别名/);
+        if(actorOname != null){
+            var actorOnames = $(li).find('.listRight i');
+            actorOnames.each(function(index, i){
+                actor_oname += $(i).text() + ',';
+            });
+        }
+
+        if(left)
+        switch(left){
+            case '性别':
+                sex = $(li).find('.listRight').text();
+                break;
+            case '出生日期':
+                birthday = $(li).find('.listRight').text();
+                break;
+            case '民族':
+                nation = $(li).find('.listRight').text();
+                break;
+            case '爱好':
+                hobby = $(li).find('.listRight').text();
+                break;
+            case '英文名':
+                actor_ename = $(li).find('.listRight').text();
+                break;
+            case '地区':
+                area = $(li).find('.listRight').text();
+                break;
+
+        }
+    });
+    actor.blood_type = blood_type;
+    actor.constellation = constellation;
+    actor.height = height;
+    actor.sex = sex;
+    actor.birthday = birthday;
+    actor.actor_ename = actor_ename;
+    actor.nation = nation;
+    actor.hobby = hobby;
+    actor.actor_head_pic = actor_head_pic;
+    actor.actor_name = actor_name;
+    actor.description = description;
+    actor.area = area;
+    actor.job = job;
+    actor.actor_oname = actor_oname;
+
+    return actor;
+}
 
 //获取影视类型
 function getVideoDetails($, video_id)
@@ -552,23 +961,23 @@ function getVideoDetails($, video_id)
 
     $('.detail_video .video_type div').each(function(index, div){
         //0别名 1地区 2语言 3上映时间
-
+        $(div).find('.type_item .type_tit').text();
         switch (index){
-            case 0:
+            case '别名:':
                 video_other_name = $(div).find('.type_item .type_txt').text();
                 break;
-            case 1:
+            case '地区:':
                 area = $(div).find('.type_item .type_txt').text();
                 break;
-            case 2:
+            case '语言:':
                 language = $(div).find('.type_item .type_txt').text();
                 break;
-            case 3:
+            case '上映时间:':
                 date = $(div).find('.type_item .type_txt').text();
                 break;
         }
     });
-
+    var actorModel = require("../models/Actors");
     //影视标签
     var tags = '';
     $('.detail_video .video_tag .tag_list a').each(function(index, a){
@@ -582,7 +991,35 @@ function getVideoDetails($, video_id)
     var actor = '';
 
     $('.detail_video .video_actor .actor_list li').each(function(index, li){
-        actor += $(li).find('.name').text() + ',';
+        //获取演员信息链接
+        var actorHref = $(li).find('.img').attr('href');
+        var actor_name = $(li).find('.name').text();
+        //获取演员id
+        //http://v.qq.com/x/star/75317
+        var pre = /http:\/\/v.qq.com\/x\/star\/([\S]+)/gim;
+
+        var actor_id = pre.exec(actorHref);
+        if(actor_id != null) {
+            actor_id = actor_id[1];
+            actor += actor_id + ',';
+            //保存演员信息(这里只存储id和头像, 简介)
+            var actorHeadPic = $(li).find('.img img').attr('src');
+            var actorDescription = $(li).find('.actor_pop .quick_pop_inner .pop_info_content .actor_info .actor_desc .txt').text();
+            var actionInfo = {actor_id: actor_id, description: actorDescription, actor_name: actor_name};
+            Actors.find(actionInfo).exec(function (err, actorValue) {
+                if (actorValue.length == 0) {
+                    Actors.create(actionInfo).exec(function (err, res) {
+                        if (err) {
+                            console.log('添加演员信息失败' + err);
+                        } else {
+                            console.log('添加演员信息成功:' + actor_id + ':' + actor_name);
+                        }
+                    });
+                } else {
+                    console.log('已经存在该演员信息');
+                }
+            });
+        }
     });
 
     var details = {
@@ -626,7 +1063,7 @@ function checkParam(param, paramName, paramValue)
     if(flag != null){
         //如果已经有了这个参数，则直接替换
         //匹配到需要替换的字符
-        var res =new RegExp("" + paramName + "=[0-9]+","gim"); // re为/^\d+bl$/gim
+        var res =new RegExp("" + paramName + "=(-)?[0-9]+","gim"); // re为/^\d+bl$/gim
         var flags = param.match(res);
         if(flags){
             //替换参数
@@ -663,20 +1100,16 @@ function sortArr(arr)
 function getVideoInfo($)
 {
     var arr = [];
-    $('.figures_list li').each(function(index, li){
-        //var video_id = $(this).find('.figure_option').attr('data-followid');
-        //var imgUrl = $(this).find('img').attr("r-lazyload");
-        var imgUrl = $(this).find('img').attr("src");
-        var video_name = $(this).find('.figure_title a').text();
-        var href = $(this).find('.figure_title a').attr('href');
+    $('.mod_figures .figures_list li').each(function(index, li){
+        var imgUrl = $(li).find('img').attr("src");
+        var video_name = $(li).find('.figure_title a').text();
+        var href = $(li).find('.figure_title a').attr('href');
         //https://v.qq.com/x/cover/o259zfwvhkvl3oi.html
-        var pre = /https:\/\/v.qq.com\/x\/cover\/([\S]+)/gim;
-        var video_id = pre.exec(href)[1];
+        var pre = /https:\/\/v.qq.com\/x\/cover\/([\S]+).html/gim;
+        var h = pre.exec(href);
+        var video_id = h[1];
         var item =  { 'video_id' : video_id, 'imgUrl' : imgUrl, 'video_name' : video_name };
         arr.push(item);
-        //if(video_id != undefined && video_id != null && video_id != '') {
-        //    getVideoDetail('http://v.qq.com/detail/c/' + video_id + '.html');
-        //}
     });
     return arr;
 }

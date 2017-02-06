@@ -64,11 +64,21 @@ module.exports.routes = {
   //抓取类型
   'get /saveTags2/:_boss': 'HrefsController.saveTags',
 
+  //拼接影视列表Links
+  'get /getSourceLink2/:type': 'HrefsController.getSourceLink',
+
   //抓取影视列表
-  'get /getSourceList2/:type': 'HrefsController.getSourceList',
+  'get /getSource/:type': 'HrefsController.getSource',
+
 
   //抓影视详情
   'get /saveVideoDetails2/:videoId': 'HrefsController.saveVideoDetails',
+
+  //抓取演员详情
+  'get /getStarInfo2/:actorId' : 'HrefsController.getStarInfo',
+
+  //拼接抓电视剧链接
+  'get /getTvLink2/:type': 'TvController.getSourceLink',
 
   /***************************************************************************
   *                                                                          *
