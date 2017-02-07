@@ -256,95 +256,6 @@ module.exports = {
         });
     },
 
-    getList: function(req, res){
-        var options = {
-            // proxy: {
-            //   hostname: '106.81.113.190',
-            //   port: '8998'
-            // },
-            url: u,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
-            }
-        };
-
-        request(options, function(err, result){
-            if(err){
-                console.log(err);
-                console.log('请求出错');
-            }else{
-                var $ = cheerio.load(result.body);
-                //获取数据总条数
-                var max = 0;
-                $('.filter_option .option_txt .hl').each(function(i, ui){
-                    if(i == 0){
-                        max = $(ui).text();
-                    }
-                });
-                //console.log(u);
-                //console.log(max);
-                //if(max == ''){
-                //    max = 0;
-                //}
-                //for(var offsetKey = 0; offsetKey <= max; offsetKey = offsetKey + 30){
-                //
-                //    setTimeout(function(offset){
-                //
-                //        u = checkParam(u, 'offset', offset);
-                //
-                //        var options = {
-                //            // proxy: {
-                //            //   hostname: '106.81.113.190',
-                //            //   port: '8998'
-                //            // },
-                //            url: u,
-                //            headers: {
-                //                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1'
-                //            }
-                //        };
-                //
-                //        request(options, function(err, result){
-                //                if(err){
-                //                    console.log('抓数据页面出错' + err);
-                //                    return err;
-                //                }else{
-                //                    var $ = cheerio.load(result.body);
-                //
-                //                    var videoInfo = getVideoInfo($);
-                //
-                //                    for(var index = 0; index < videoInfo.length; index ++){
-                //
-                //                        setTimeout(function(video){
-                //
-                //                            Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
-                //                                if(resVideo.length == 0){
-                //                                    Video.create(video).exec(function(er, re){
-                //                                        if(er){
-                //                                            console.log('插入失败' + err);
-                //                                        }else{
-                //                                            console.log('添加影视成功' + video.video_id);
-                //                                        }
-                //                                    });
-                //                                }else{
-                //                                    console.log('已经存在相同的影视了:' + video.video_name);
-                //                                }
-                //                            });
-                //
-                //                        }, 0, videoInfo[index]);
-                //
-                //                    }
-                //
-                //                }
-                //        });
-                //
-                //    }, 0, offsetKey);
-                //
-                //}
-
-            }
-        });
-    },
-
     getSource:function(req, res){
         var cheerio = require("cheerio");
         var request = require("request");
@@ -354,17 +265,19 @@ module.exports = {
         var tags = require("../models/Tags");
         var video = require("../models/Video");
         //var u = 'http://v.qq.com/x/list/movie?offset=0&sort=6';
-        var u = '';
+        var u = req.param('u', '');
         var type = req.param('type', '');
         var where = {};
         if(type != ''){
-            where = {'type' : type};
+            //where = {where : {type : type}, skip : 20, limit : 10 };
+            where = {where : {type : type}};
         }
-        if(u == '' || u == null){
+        if(u == '' || u == null || u == 'all'){
             //如果抓取的链接为空,则抓全部分类下的数据
-            Href.find(where).exec(function(err, hrefs){
+            Links.find(where).exec(function(err, hrefs){
+
                 hrefs.forEach(function(url, index){
-                    var u = url['url'] + '?';
+                    var u = url['link'];
                     if(url['type'] == 'movie' || url['type'] == 'tv'){
                         var options = {
                             // proxy: {
@@ -420,38 +333,44 @@ module.exports = {
                                                 for(var index = 0; index < videoInfo.length; index ++){
 
                                                     setTimeout(function(video){
-                                                        video.type = url['type'];
+                                                        video.type = url.type;
                                                         Video.findOne({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
-                                                            resVideo.type = url['type'];
-                                                            if(resVideo.length == 0){
-                                                                Video.create(video).exec(function(er, re){
-                                                                    if(er){
-                                                                        console.log('插入失败' + err);
-                                                                    }else{
-                                                                        console.log('添加影视成功' + video.video_id);
-                                                                    }
-                                                                });
-                                                            }else{
-                                                                resVideo.save(
-                                                                    function(er){
-                                                                        if(err != null){
-                                                                            console.log('更新影视列表失败:' + er);
-                                                                        }else{
-                                                                            console.log('更新影视列表成功:' + video.video_id + '影视名:' + video.video_name);
+                                                            if(err == null) {
+                                                                if (resVideo == undefined) {
+                                                                    Video.create(video).exec(function (er, re) {
+                                                                        if (er) {
+                                                                            console.log('插入失败' + err);
+                                                                        } else {
+                                                                            console.log('添加影视成功' + video.video_id);
                                                                         }
-                                                                    }
-                                                                );
+                                                                    });
+                                                                } else {
+                                                                    resVideo.type = 'movie';
+                                                                    resVideo.save(
+                                                                        function (er) {
+                                                                            if (err != null) {
+                                                                                console.log('更新影视列表失败:' + er);
+                                                                            } else {
+                                                                                console.log('更新影视列表成功:' + video.video_id + '影视名:' + video.video_name);
+                                                                            }
+                                                                        }
+                                                                    );
+                                                                }
+                                                            }else{
+                                                                console.log(err);
+                                                                return false;
                                                             }
                                                         });
 
-                                                    }, 0, videoInfo[index]);
+
+                                                    }, 100, videoInfo[index]);
 
                                                 }
 
                                             }
                                         });
 
-                                    }, 0, offsetKey);
+                                    }, 100, offsetKey);
 
                                 }
 
@@ -547,14 +466,14 @@ module.exports = {
                                                 }
                                             });
 
-                                        }, 0, videoInfo[index]);
+                                        }, 100, videoInfo[index]);
 
                                     }
 
                                 }
                             });
 
-                        }, 0, offsetKey);
+                        }, 100, offsetKey);
 
                     }
 
@@ -584,108 +503,152 @@ module.exports = {
             //抓取指定网页的标签
             where = { 'type' : type};
         }
+        var step = req.param('step', '1');
+        if(step == '1') {
+            Href.find(where).exec(function (err, links) {
+                if (links.length == 0) {
+                    return false;
+                } else {
+                    links.forEach(function (link, index) {
+                        setTimeout(function (linkItem) {
+                            //拼接链接主地址
+                            var url = getServerName(linkItem.url);
+                            //子条件查询语句
+                            var subWhere = {"_parentBoss": linkItem.type};
+                            //获取filter_tags
+                            FilterTags.find(subWhere).exec(function (err, filterTags) {
 
-        Href.find(where).exec(function(err, links){
-            if(links.length == 0){
-                return false;
-            }else{
-                links.forEach(function(link, index){
-                    setTimeout(function(linkItem){
-                        //拼接链接主地址
-                        var url = getServerName(linkItem.url);
-                        //子条件查询语句
-                        var subWhere = { "_parentBoss" : linkItem.type };
-                        //获取filter_tags
-                        FilterTags.find(subWhere).exec(function(err, filterTags){
+                                //获取标签
+                                Tags.find(subWhere).exec(function (err, tags) {
 
-                            //获取标签
-                            Tags.find(subWhere).exec(function(err, tags){
+                                    //分组数组
+                                    tags = sortArr(tags);
+                                    for (var i = 0; i < filterTags.length; i++) {
+                                        setTimeout(function (filterTag) {
 
-                                //分组数组
-                                tags = sortArr(tags);
-                                for(var i = 0; i < filterTags.length; i ++){
-                                    setTimeout(function(filterTag){
+                                            var u = url + filterTag['href'] + '&';
+                                            //此处是链接拼接处，如有修改，基本只修改这里
+                                            //{ subtype, area, year, plot_aspect, cate, pay, edition 为循环的数组}
 
-                                        var u = url + filterTag['href'] + '&';
-                                        //此处是链接拼接处，如有修改，基本只修改这里
-                                        //{ subtype, area, year, plot_aspect, cate, pay, edition 为循环的数组}
+                                            for (var subTypeKey = 0; subTypeKey < tags['subtype'].length; subTypeKey++) {
+                                                setTimeout(function (subTypeItem) {
+                                                    u = checkParam(u, subTypeItem['data_type'], subTypeItem['data_index']);
 
-                                        for(var subTypeKey = 0; subTypeKey < tags['subtype']. length; subTypeKey ++){
-                                            setTimeout(function(subTypeItem){
-                                                u = checkParam(u, subTypeItem['data_type'], subTypeItem['data_index']);
+                                                    for (var areaKey = 0; areaKey < tags['area'].length; areaKey++) {
+                                                        setTimeout(function (areaItem) {
+                                                            u = checkParam(u, areaItem['data_type'], areaItem['data_index']);
 
-                                                for(var areaKey = 0; areaKey < tags['area']. length; areaKey ++){
-                                                    setTimeout(function(areaItem){
-                                                        u = checkParam(u, areaItem['data_type'], areaItem['data_index']);
+                                                            for (var yearKey = 0; yearKey < tags['year'].length; yearKey++) {
+                                                                setTimeout(function (yearItem) {
+                                                                    u = checkParam(u, yearItem['data_type'], yearItem['data_index']);
 
-                                                        for(var yearKey = 0; yearKey < tags['year']. length; yearKey ++){
-                                                            setTimeout(function(yearItem){
-                                                                u = checkParam(u, yearItem['data_type'], yearItem['data_index']);
-                                                                console.log(u);
-                                                                //for(var plot_aspectKey = 0; plot_aspectKey < tags['plot_aspect']. length; plot_aspectKey ++){
-                                                                //    setTimeout(function(plot_aspectItem){
-                                                                //        u = checkParam(u, plot_aspectItem['data_type'], plot_aspectItem['data_index']);
+                                                                    var condition = {link : u};
+                                                                    Links.find(condition).exec(function (res, linksRes) {
 
-                                                                        //for(var cateKey = 0; cateKey < tags['cate']. length; cateKey ++){
-                                                                        //    setTimeout(function(cateItem){
-                                                                        //        u = checkParam(u, cateItem['data_type'], cateItem['data_index']);
+                                                                        if (linksRes.length == 0 ) {
+                                                                            Links.create({
+                                                                                'type' : link.type,
+                                                                                'link' : u,
+                                                                                'step' : '1'
+                                                                            }).exec(function (err, result) {
+                                                                                if (err) {
+                                                                                    console.log(err + '插入链接失败');
+                                                                                } else {
+                                                                                    console.log(err + '添加链接成功:' + u);
+                                                                                }
+                                                                            });
+                                                                        } else {
+                                                                            console.log('已经存在该链接');
+                                                                        }
+                                                                    });
 
-                                                                                //for(var payKey = 0; payKey < tags['pay']. length; payKey ++){
-                                                                                //    setTimeout(function(payItem){
-                                                                                //        u = checkParam(u, payItem['data_type'], payItem['data_index']);
-                                                                                //
-                                                                                //        for(var editionKey = 0; editionKey < tags['edition']. length; editionKey ++){
-                                                                                //            setTimeout(function(editionItem){
-                                                                                //
-                                                                                //                u = checkParam(u, editionItem['data_type'], editionItem['data_index']);
-                                                                                //
-                                                                                //                where = { 'type': link['type'], 'link' : u };
-                                                                                //                Links.find(where).exec(function(res, linksRes){
-                                                                                //                    if(linksRes.length == 0){
-                                                                                //                        Links.create(where).exec(function(err, result){
-                                                                                //                            if(err){
-                                                                                //                                console.log(err + '插入链接失败');
-                                                                                //                            }else{
-                                                                                //                                console.log(err + '添加链接成功:' + u);
-                                                                                //                            }
-                                                                                //                        });
-                                                                                //                    }else{
-                                                                                //                        console.log('已经存在该链接');
-                                                                                //                    }
-                                                                                //                });
-                                                                                //
-                                                                                //            }, 0, tags['edition'][editionKey]);
-                                                                                //        }
-                                                                                //
-                                                                                //    }, 0, tags['pay'][payKey]);
-                                                                                //}
+                                                                }, 1000, tags['year'][yearKey]);
+                                                            }
 
-                                                                        //    }, 0, tags['cate'][cateKey]);
-                                                                        //}
+                                                        }, 1000, tags['area'][areaKey]);
+                                                    }
 
-                                                                //    }, 0, tags['plot_aspect'][plot_aspectKey]);
-                                                                //}
+                                                }, 1000, tags['subtype'][subTypeKey]);
+                                            }
 
-                                                            }, 0, tags['year'][yearKey]);
-                                                        }
+                                        }, 1000, filterTags[i]);
+                                    }
+                                    //首先循环标签数组
 
-                                                    }, 0, tags['area'][areaKey]);
-                                                }
-
-                                            }, 0, tags['subtype'][subTypeKey]);
-                                        }
-
-                                    }, 0, filterTags[i]);
-                                }
-                                //首先循环标签数组
-
+                                });
                             });
-                        });
 
-                    }, 0, link);
+                        }, 1000, link);
+                    });
+                }
+            });
+        }else if(step == 2){
+            var subWhere = {"_parentBoss": type};
+            var condition = {'type' : type, 'step' : '1'};
+            Links.find(condition).exec(function(err, links){
+                //获取标签
+                Tags.find(subWhere).exec(function (err, tags) {
+
+                    //分组数组
+                    tags = sortArr(tags);
+                    for (var i = 0; i < links.length; i++) {
+                        setTimeout(function (link) {
+
+                            var u = link['link'];
+                            for(var plot_aspectKey = 0; plot_aspectKey < tags['plot_aspect']. length; plot_aspectKey ++){
+                                setTimeout(function(plot_aspectItem){
+                                    u = checkParam(u, plot_aspectItem['data_type'], plot_aspectItem['data_index']);
+
+                                    for(var cateKey = 0; cateKey < tags['cate']. length; cateKey ++){
+                                        setTimeout(function(cateItem){
+                                            u = checkParam(u, cateItem['data_type'], cateItem['data_index']);
+
+                                            for(var payKey = 0; payKey < tags['pay']. length; payKey ++){
+                                                setTimeout(function(payItem){
+                                                    u = checkParam(u, payItem['data_type'], payItem['data_index']);
+
+                                                    for(var editionKey = 0; editionKey < tags['edition']. length; editionKey ++){
+                                                        setTimeout(function(editionItem){
+
+                                                            u = checkParam(u, editionItem['data_type'], editionItem['data_index']);
+
+                                                            where = { 'type': link['type'], 'link' : link['link'] };
+                                                            Links.findOne(where).exec(function(res, linksRes){
+                                                                if(typeof(linksRes)  == 'undefined'){
+                                                                    console.log('不存在该链接');
+                                                                }else{
+                                                                    linksRes.step = 2;
+                                                                    linksRes.save( function(er){
+                                                                        if(err != null){
+                                                                            console.log('更新链接失败:' + er);
+                                                                        }else{
+                                                                            console.log('更新链接成功:' + linksRes.id);
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+
+                                                        }, 0, tags['edition'][editionKey]);
+                                                    }
+
+                                                }, 0, tags['pay'][payKey]);
+                                            }
+
+                                        }, 0, tags['cate'][cateKey]);
+                                    }
+
+                                }, 0, tags['plot_aspect'][plot_aspectKey]);
+                            }
+
+                        }, 0, links[i]);
+                    }
+                    //首先循环标签数组
+
                 });
-            }
-        });
+
+            });
+
+        }
 
     },
 

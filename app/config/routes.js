@@ -65,7 +65,7 @@ module.exports.routes = {
   'get /saveTags2/:_boss': 'HrefsController.saveTags',
 
   //拼接影视列表Links
-  'get /getSourceLink2/:type': 'HrefsController.getSourceLink',
+  'get /getSourceLink2/:type/:step': 'HrefsController.getSourceLink',
 
   //抓取影视列表
   'get /getSource/:type': 'HrefsController.getSource',
@@ -78,7 +78,7 @@ module.exports.routes = {
   'get /getStarInfo2/:actorId' : 'HrefsController.getStarInfo',
 
   //拼接抓电视剧链接
-  'get /getTvLink2/:type': 'TvController.getSourceLink',
+  'get /getTvLink2/:type/:step': 'TvController.getSourceLink',
 
   /***************************************************************************
   *                                                                          *

@@ -18,6 +18,10 @@ module.exports = {
       type  : 'string',
       required  : true
     },
+    step : {
+      type : 'string',
+      required : false
+    }
   },
   autoCreatedAt: true,
 
