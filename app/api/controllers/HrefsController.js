@@ -334,9 +334,9 @@ module.exports = {
 
                                                     setTimeout(function(video){
                                                         video.type = url.type;
-                                                        Video.findOne({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
+                                                        Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
                                                             if(err == null) {
-                                                                if (resVideo == undefined) {
+                                                                if (resVideo.length == 0) {
                                                                     Video.create(video).exec(function (er, re) {
                                                                         if (er) {
                                                                             console.log('插入失败' + err);
@@ -345,8 +345,8 @@ module.exports = {
                                                                         }
                                                                     });
                                                                 } else {
-                                                                    resVideo.type = 'movie';
-                                                                    resVideo.save(
+                                                                    resVideo[0].type = 'movie';
+                                                                    resVideo[0].save(
                                                                         function (er) {
                                                                             if (err != null) {
                                                                                 console.log('更新影视列表失败:' + er);

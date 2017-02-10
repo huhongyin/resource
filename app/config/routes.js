@@ -80,6 +80,9 @@ module.exports.routes = {
   //拼接抓电视剧链接
   'get /getTvLink2/:type/:step': 'TvController.getSourceLink',
 
+  //抓取电视剧列表
+  'get /getTvSource/:type': 'TvController.getSource',
+
   /***************************************************************************
   *                                                                          *
   * Custom routes here...                                                    *

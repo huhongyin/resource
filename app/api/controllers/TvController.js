@@ -140,6 +140,7 @@ module.exports = {
         var u = req.param('u', '');
         var type = req.param('type', '');
         var where = {};
+        //u = 'http://v.qq.com/x/list/movie?offset=0&sort=4';
         if(type != ''){
             //where = {where : {type : type}, skip : 20, limit : 10 };
             where = {where : {type : type}};
@@ -206,9 +207,9 @@ module.exports = {
 
                                                     setTimeout(function(video){
                                                         video.type = url.type;
-                                                        Video.findOne({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
+                                                        Video.find({ "video_id" : video.video_id }).exec(function(err, resVideo){
                                                             if(err == null) {
-                                                                if (resVideo == undefined) {
+                                                                if (resVideo.length == 0) {
                                                                     Video.create(video).exec(function (er, re) {
                                                                         if (er) {
                                                                             console.log('插入失败' + err);
@@ -217,8 +218,8 @@ module.exports = {
                                                                         }
                                                                     });
                                                                 } else {
-                                                                    resVideo.type = 'movie';
-                                                                    resVideo.save(
+                                                                    resVideo[0].type = 'movie';
+                                                                    resVideo[0].save(
                                                                         function (er) {
                                                                             if (err != null) {
                                                                                 console.log('更新影视列表失败:' + er);
@@ -315,8 +316,8 @@ module.exports = {
                                             var t = pre.exec(u);
                                             var type = t[1];
                                             video.type = type;
-                                            Video.findOne({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
-                                                resVideo.type = type;
+                                            Video.find({ "video_id" : video.video_id, "video_name" : video.video_name }).exec(function(err, resVideo){
+
                                                 if(resVideo.length == 0){
                                                     Video.create(video).exec(function(er, re){
                                                         if(er){
@@ -326,7 +327,8 @@ module.exports = {
                                                         }
                                                     });
                                                 }else{
-                                                    resVideo.save(
+                                                    resVideo[0].type = type;
+                                                    resVideo[0].save(
                                                         function(er){
                                                             if(err != null){
                                                                 console.log('更新影视列表失败:' + er);
